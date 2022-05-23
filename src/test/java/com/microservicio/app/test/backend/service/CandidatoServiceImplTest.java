@@ -1,0 +1,99 @@
+package com.microservicio.app.test.backend.service;
+
+import com.microservicio.app.test.backend.dto.CandidatoCrearDto;
+import com.microservicio.app.test.backend.dto.CandidatoDto;
+import com.microservicio.app.test.backend.entity.Candidato;
+import com.microservicio.app.test.backend.repository.CandidatoRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@ExtendWith(MockitoExtension.class)
+class CandidatoServiceImplTest {
+
+    @Mock
+    private CandidatoRepository candidatoRepository;
+
+    @InjectMocks
+    private CandidatoServiceImpl candidatoService;
+
+    Candidato candidato;
+    CandidatoDto candidatoDto;
+    CandidatoCrearDto candidatoCrearDto;
+
+    @BeforeEach
+    void setUp() {
+
+        candidato = new Candidato(1l, "pepe", "perez","calle falsa 123","Analista de sistemas","desarrollador en java en proyecto de facebook","");
+        candidatoDto = null;
+        candidatoCrearDto = new CandidatoCrearDto(1l, "pepe", "perez","calle falsa 123","Analista de sistemas","desarrollador en java en proyecto de facebook","");
+
+    }
+
+    @Test
+    void findAllTest() {
+
+        List<Candidato> listaCandidato = new ArrayList<>();
+        listaCandidato.add(candidato);
+
+        Mockito.when(candidatoRepository.findAll()).thenReturn(listaCandidato);
+
+        List<CandidatoDto> candidatos = candidatoService.findAll();
+
+        assertEquals(1, candidatos.size());
+
+    }
+
+    @Test
+    void findByIdTest() {
+
+        Mockito.when(candidatoRepository.findById(1l)).thenReturn(Optional.of(candidato));
+        candidatoDto = candidatoService.findById(1l);
+
+        assertEquals("pepe", candidatoDto.getNombre());
+
+        assertThrows(NoSuchElementException.class, () ->{
+            candidatoService.findById(2l);
+        });
+
+    }
+
+    @Test
+    void addCandidatoDtoTest() {
+
+        Mockito.when(candidatoRepository.save(candidato)).thenReturn(candidato);
+        candidatoDto = candidatoService.addCandidatoDto(candidatoCrearDto);
+
+        assertEquals("pepe", candidatoDto.getNombre());
+
+    }
+
+    @Test
+    void updateCandidatoDtoTest() {
+
+        Mockito.when(candidatoRepository.findById(1l)).thenReturn(Optional.of(candidato));
+        Mockito.when(candidatoRepository.save(candidato)).thenReturn(candidato);
+        candidatoDto = candidatoService.updateCandidatoDto(1l, candidatoCrearDto);
+
+        assertEquals("pepe", candidatoDto.getNombre());
+    }
+
+    @Test
+    void deleteCandidatoTest() {
+
+        Mockito.when(candidatoRepository.findById(1l)).thenReturn(Optional.of(candidato));
+        candidatoService.deleteCandidato(1l);
+        Mockito.verify(candidatoRepository,Mockito.times(1)).deleteById(1l);
+    }
+}

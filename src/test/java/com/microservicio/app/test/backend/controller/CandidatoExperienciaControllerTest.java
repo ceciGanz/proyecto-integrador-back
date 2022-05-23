@@ -1,0 +1,116 @@
+package com.microservicio.app.test.backend.controller;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.microservicio.app.test.backend.dto.CandidatoExperienciaCrearDto;
+import com.microservicio.app.test.backend.dto.CandidatoExperienciaDto;
+import com.microservicio.app.test.backend.entity.*;
+import com.microservicio.app.test.backend.service.CandidatoExperienciaService;
+import com.microservicio.app.test.backend.service.CandidatoExperienciaServiceImple;
+import com.microservicio.app.test.backend.service.CandidatoService;
+import com.microservicio.app.test.backend.service.UserServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+
+@WebMvcTest(CandidatoExperienciaController.class)
+class CandidatoExperienciaControllerTest {
+
+    @MockBean
+    private CandidatoExperienciaService candidatoExperienciaService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private UserServiceImpl userService;
+
+    private CandidatoExperienciaDto candidatoExperienciaDto;
+    private CandidatoExperiencia candidatoExperiencia;
+    private Candidato candidato;
+    private CandidatoExperienciaCrearDto candidatoExperienciaCrearDto;
+
+    private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void setUp() {
+
+        candidato = new Candidato(1l, "pepe", "perez","calle falsa 123","Analista de sistemas","desarrollador en java en proyecto de facebook","");
+        candidatoExperienciaDto = new CandidatoExperienciaDto(1l, candidato,"7/4/2022", "8/4/2022", "vates", "desarrollador", "Buenos Aires - Capital Federal");
+        candidatoExperiencia = new CandidatoExperiencia(1l, candidato,"7/4/2022", "8/4/2022", "vates", "desarrollador", "Buenos Aires - Capital Federal");
+        candidatoExperienciaCrearDto = new CandidatoExperienciaCrearDto(1l, candidato,"7/4/2022", "8/4/2022", "vates", "desarrollador", "Buenos Aires - Capital Federal");
+
+        objectMapper = new ObjectMapper();
+    }
+
+    @Test
+    @WithMockUser
+    void listadoExperienciaTest() throws Exception {
+
+        List<CandidatoExperienciaDto> experiencias = new ArrayList<>();
+        experiencias.add(candidatoExperienciaDto);
+
+        when(candidatoExperienciaService.findAll()).thenReturn(experiencias);
+
+        mockMvc.perform(get("/api/listado-experiencia").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser
+    void addExperienciaCandidatoTest() throws Exception {
+
+        when(candidatoExperienciaService.addCandidatoExperiencia(candidatoExperienciaCrearDto)).thenReturn(candidatoExperienciaDto);
+
+        mockMvc.perform(post("/api/crearExperiencia")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .content(objectMapper.writeValueAsString(candidatoExperienciaCrearDto)))
+
+                .andExpect(status().isCreated())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.empresa").value("vates"));
+    }
+
+    @Test
+    @WithMockUser
+    void actualizarExperienciaCandidatoTest() throws Exception {
+
+        when(candidatoExperienciaService.updateCandidatoExperiencia(1l, candidatoExperienciaCrearDto)).thenReturn(candidatoExperienciaDto);
+
+        mockMvc.perform(put("/api/actualizar-experiencia/{id}", 1l)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .content(objectMapper.writeValueAsString(candidatoExperienciaCrearDto)))
+
+                .andExpect(status().isCreated())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.empresa").value("vates"));
+    }
+
+    @Test
+    @WithMockUser
+    void eleiminarExperienciaTest() throws Exception {
+
+        mockMvc.perform(delete("/api/eleiminar-experiencia/{id}", 1l)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk());
+
+        verify(candidatoExperienciaService, times(1)).deleteCandidatoExperiencia(1l);
+    }
+}
